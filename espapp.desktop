@@ -1,0 +1,11 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=ESPAPP
+Comment=ESPAPP - Gestor de Sensores ESP32
+Exec=/home/alumnado/Adrian/espapp-env/START.sh
+Icon=/home/alumnado/Adrian/espapp-env/web/icon.png
+Categories=Utility;Science;Engineering;
+Keywords=esp32;sensors;iot;measurement;
+Terminal=false
+StartupNotify=true

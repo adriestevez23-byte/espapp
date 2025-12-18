@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>ESP32 • Gestor de Sensores</title>
+<link rel="icon" type="image/svg+xml" href="icon.svg">
+<link rel="stylesheet" href="style.css" />
+<script type="module" src="js/main.js" defer></script>
+</head>
+<body>
+  <aside id="sidebar" class="sidebar">
+    <h2>ESP32</h2>
+    <nav>
+      <a id="link-home" class="active" href="#" onclick="mostrarSeccion('home')">🏠 Inicio</a>
+      <a href="#" onclick="abrirGmail()">📬 Enviar correo</a>
+      <a href="#" onclick="abrirModal()">💡 Acerca</a>
+    </nav>
+  </aside>
+
+  <main>
+    <header>
+      <div class="header-left">
+        <button id="menu-btn" onclick="toggleMenu()">☰</button>
+        <h1>ESP32 • Gestor de Sensores</h1>
+      </div>
+      <div class="header-right">
+        <div id="conn-indicator" class="conn disconnected" title="Estado de conexión">
+          <span id="conn-dot">●</span>
+          <span id="conn-text"></span>
+        </div>
+          <!-- Toolbar removed: use Export/Import/PDF inside Gestor de Secciones -->
+          <button id="theme-btn" onclick="toggleTheme()">🌙</button>
+          <button id="settings-btn" onclick="abrirAjustes()">⚙️</button>
+      </div>
+    </header>
+    
+
+    <!-- Home -->
+    <section id="home" class="section active">
+      <div class="container home-container">
+        <h2>🚀 Bienvenido</h2>
+        <div class="home-card">
+          <p><strong>ESP32 Gestor de Sensores</strong> — aplicación para medir y gestionar datos de sensores conectados a tu ESP32 en tiempo real.</p>
+
+          <h3>📖 Guía rápida</h3>
+          <ol>
+            <li>Abre <b>Ajustes → Escanear redes</b> y busca tu ESP32.</li>
+            <li>Selecciona la red del ESP32 e introduce la contraseña si hace falta.</li>
+            <li>Al conectar, el indicador mostrará el estado (verde = conectado).</li>
+            <li>Define las secciones y sus columnas en el gestor de secciones.</li>
+            <li>Define la distancia entre sensores y pulsa <b>Confirmar</b>.</li>
+            <li>Las mediciones se guardan automáticamente y se pueden exportar/importar.</li>
+          </ol>
+
+          <h3>✨ Características</h3>
+          <ul style="text-align:left; margin-left:20px;">
+            <li>Gráficos y tablas en tiempo real.</li>
+            <li>Importa/Exporta datos en JSON.</li>
+            <li>Descarga informes en PDF.</li>
+            <li>Tema claro/oscuro y persistencia local.</li>
+          </ul>
+
+          <h3>💡 Ejemplo (Servidor ESP32 en MicroPython)</h3>
+          <p>Este es el código de ejemplo para ESP32 en MicroPython. Proporciona endpoints compatibles con ESPAPP: <code>/data</code>, <code>/set_distancia</code>, <code>/logs</code>, <code>/clear</code> y <code>/status</code>. Carga este código en tu ESP32 usando Thonny, rshell o ampy, y ajusta las credenciales WiFi y pines de sensores según tu hardware.</p>
+          <div class="code-example-container">
+            <div class="code-example-header">esp32ejemplo.py — servidor HTTP MicroPython compatible con ESPAPP</div>
+            <button class="btn-copy-code" onclick="copiarCodigoESP32()">Copiar</button>
+            <pre id="code-esp32-example"><code>/*
+  ESP32 - Ejemplo básico de servidor HTTP para la app
+
+  - Provee GET /data -> devuelve JSON con mediciones (lista "measurements").
+  - Provee POST /add -> recibe JSON {"tiempo":..., "velocidad":..., "metros":...} y lo añade a la lista.
+  - Provee GET /clear -> borra las mediciones guardadas.
+
+  Fácil de editar:
+  - Cambia `WIFI_SSID` y `WIFI_PASS` por tus credenciales (o usa modo AP si lo deseas).
+  - Reemplaza la función `readSensor()` por lectura real del sensor.
+  - Ajusta puerto en `SERVER_PORT` si hace falta.
+
+  Requisitos Arduino/PlatformIO:
+  - Placa: ESP32 (ESP32 Dev Module)
+  - Librerías: WiFi.h (incluida en core ESP32), WebServer.h (incluida)
+
+  Uso desde la aplicación (ejemplo):
+  - GET http://<esp32_ip>/data  -> devuelve JSON con measurements
+  - POST http://<esp32_ip>/add  -> enviar JSON para añadir una medida
+  - GET http://<esp32_ip>/clear -> limpiar la lista (útil para pruebas)
+*/
+
+#include &lt;WiFi.h&gt;
+#include &lt;WebServer.h&gt;
+#include &lt;ArduinoJson.h&gt; // Recomendado para parsear/crear JSON (instalar si no está)
+
+// -----------------------------
+// CONFIGURACIÓN (edítala)
+// -----------------------------
+const char* WIFI_SSID = "TU_SSID";        // <- Cambia esto
+const char* WIFI_PASS = "TU_PASSWORD";   // <- Cambia esto
+const int SERVER_PORT = 80;                // Puerto HTTP (80 por defecto)
+
+// -----------------------------
+// Variables globales
+// -----------------------------
+WebServer server(SERVER_PORT);
+
+// Distancia entre sensores (en metros) que usa la app para calcular velocidad
+float distancia_m = 0.0;
+
+// Logs en memoria (útil para /logs)
+const size_t MAX_LOGS = 500;
+String esp_logs[MAX_LOGS];
+size_t esp_logs_count = 0;
+
+// -----------------------------
+// Pines de sensores (configura aquí)
+// -----------------------------
+const int SENSOR_PIN_1 = 14; // GPIO14 - Sensor 1 (ejemplo)
+const int SENSOR_PIN_2 = 12; // GPIO12 - Sensor 2 (ejemplo)
+
+// Mantener las mediciones en memoria (array simple)
+struct Measurement {
+  String dia;       // fecha (ej: "2025-12-01")
+  String hora;      // hora (ej: "09:20:00")
+  float tiempo;     // tiempo en segundos
+  float velocidad;  // m/s
+  float metros;     // metros
+};
+
+const size_t MAX_MEASUREMENTS = 200;
+Measurement measurements[MAX_MEASUREMENTS];
+size_t measurements_count = 0;
+
+// -----------------------------
+// Funciones auxiliares
+// -----------------------------
+String nowDate() {
+  time_t t = time(nullptr);
+  struct tm *tm_info = localtime(&t);
+  char buf[11];
+  if (tm_info) {
+    strftime(buf, sizeof(buf), "%Y-%m-%d", tm_info);
+    return String(buf);
+  }
+  return String("-");
+}
+
+String nowTime() {
+  time_t t = time(nullptr);
+  struct tm *tm_info = localtime(&t);
+  char buf[9];
+  if (tm_info) {
+    strftime(buf, sizeof(buf), "%H:%M:%S", tm_info);
+    return String(buf);
+  }
+  return String("-");
+}
+
+Measurement readSensor() {
+  Measurement m;
+  m.dia = nowDate();
+  m.hora = nowTime();
+  m.tiempo = random(10, 100) / 10.0;
+  m.velocidad = random(50, 500) / 100.0;
+  m.metros = m.velocidad * m.tiempo;
+  return m;
+}
+
+bool addMeasurement(const Measurement &m) {
+  if (measurements_count >= MAX_MEASUREMENTS) return false;
+  measurements[measurements_count++] = m;
+  return true;
+}
+
+void clearMeasurements() {
+  measurements_count = 0;
+}
+
+// Añadir línea a logs en memoria + Serial
+void esp_log(const String &line) {
+  Serial.println(line);
+  if (esp_logs_count < MAX_LOGS) {
+    esp_logs[esp_logs_count++] = line;
+  } else {
+    for (size_t i = 1; i < MAX_LOGS; ++i) esp_logs[i-1] = esp_logs[i];
+    esp_logs[MAX_LOGS-1] = line;
+  }
+}
+
+void handle_get_data() {
+  DynamicJsonDocument doc(8192);
+  doc["ok"] = true;
+  JsonArray arr = doc.createNestedArray("measurements");
+  const size_t maxSend = 50;
+  size_t start = 0;
+  if (measurements_count > maxSend) start = measurements_count - maxSend;
+  for (size_t i = start; i < measurements_count; ++i) {
+    JsonObject item = arr.createNestedObject();
+    item["tiempo"] = measurements[i].tiempo;
+    item["velocidad"] = measurements[i].velocidad;
+    item["metros"] = measurements[i].metros;
+    unsigned long ts = millis() / 1000UL;
+    item["ts"] = ts;
+  }
+  JsonObject cfg = doc.createNestedObject("config");
+  cfg["distancia_m"] = distancia_m;
+  String out; serializeJson(doc, out);
+  server.sendHeader("Access-Control-Allow-Origin", "*");
+  server.sendHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+  server.sendHeader("Access-Control-Allow-Headers", "Content-Type");
+  server.send(200, "application/json", out);
+}
+
+void handle_post_add() {
+  if (server.hasArg("plain") == false) {
+    server.send(400, "application/json", "{\"ok\":false,\"msg\":\"Falta body\"}");
+    return;
+  }
+  String body = server.arg("plain");
+  DynamicJsonDocument doc(1024);
+  DeserializationError err = deserializeJson(doc, body);
+  if (err) { server.send(400, "application/json", "{\"ok\":false,\"msg\":\"JSON inválido\"}"); return; }
+  Measurement m;
+  m.dia = doc.containsKey("dia") ? String((const char*)doc["dia"]) : nowDate();
+  m.hora = doc.containsKey("hora") ? String((const char*)doc["hora"]) : nowTime();
+  m.tiempo = doc.containsKey("tiempo") ? float(doc["tiempo"]) : 0.0;
+  m.velocidad = doc.containsKey("velocidad") ? float(doc["velocidad"]) : 0.0;
+  m.metros = doc.containsKey("metros") ? float(doc["metros"]) : (m.velocidad * m.tiempo);
+  unsigned long ts = millis() / 1000UL;
+  if (!addMeasurement(m)) { server.send(507, "application/json", "{\"ok\":false,\"msg\":\"Memoria llena\"}"); return; }
+  server.sendHeader("Access-Control-Allow-Origin", "*");
+  server.send(200, "application/json", "{\"ok\":true,\"msg\":\"Añadido\", \"ts\": "+ String(ts) +"}");
+}
+
+void handle_get_set_distancia() {
+  if (server.hasArg("d")) {
+    String s = server.arg("d"); float d = s.toFloat(); if (d > 0) { distancia_m = d; server.sendHeader("Access-Control-Allow-Origin", "*"); server.send(200, "application/json", "{\"ok\":true,\"metros\": " + String(distancia_m, 6) + "}"); esp_log(String("set distancia: ") + String(distancia_m, 6) + " m"); return; }
+  }
+  if (server.hasArg("d_cm")) {
+    String s = server.arg("d_cm"); float d = s.toFloat() / 100.0; if (d > 0) { distancia_m = d; server.sendHeader("Access-Control-Allow-Origin", "*"); server.send(200, "application/json", "{\"ok\":true,\"metros\": " + String(distancia_m, 6) + "}"); esp_log(String("set distancia: ") + String(distancia_m, 6) + " m (from cm)"); return; }
+  }
+  server.send(400, "application/json", "{\"ok\":false,\"msg\":\"distancia invalida\"}");
+}
+
+void handle_get_logs() { DynamicJsonDocument doc(8192); doc["ok"] = true; JsonArray arr = doc.createNestedArray("logs"); for (size_t i = 0; i < esp_logs_count; ++i) arr.add(esp_logs[i]); String out; serializeJson(doc, out); server.sendHeader("Access-Control-Allow-Origin", "*"); server.send(200, "application/json", out); }
+
+void handle_get_status() { DynamicJsonDocument doc(512); doc["ok"] = true; doc["uptime_s"] = millis() / 1000UL; doc["measurements_count"] = (int)measurements_count; doc["distancia_m"] = distancia_m; JsonObject ip = doc.createNestedObject("ip"); ip["addr"] = WiFi.localIP().toString(); String out; serializeJson(doc, out); server.sendHeader("Access-Control-Allow-Origin", "*"); server.send(200, "application/json", out); }
+
+// Resto del código: setup() y loop() ... (igual que en el archivo original)
+</code></pre>
+          </div>
+
+          <h3>📚 Pasos iniciales</h3>
+          <ol style="text-align:left;">
+            <li>Sube el código al ESP32 (Thonny o esptool).</li>
+            <li>Conecta los sensores y configura los pines en el código.</li>
+            <li>Escanea y conéctate desde <b>Ajustes</b>.</li>
+          </ol>
+        </div>
+      </div>
+    </section>
+
+    <!-- (Sección 'mediciones' estática eliminada; usa el Gestor de Secciones para gestionar tablas) -->
+
+    <footer class="footer">ESP32 • Gestor de Sensores © 2025</footer>
+  </main>
+
+  <!-- Modal Ajustes -->
+  <div id="settingsModal" class="modal">
+    <div class="modal-content">
+      <button class="close-btn" onclick="cerrarAjustes()">✖</button>
+      <h3>Ajustes de Conexión</h3>
+      <div class="ajustes-section">
+        <h4>Redes disponibles</h4>
+        <button id="scan-btn" onclick="escaneaRedes()">🔄 Escanear redes</button>
+        <ul id="lista-wifi"></ul>
+        <div id="password-container" style="display:none; flex-direction: column; margin-top: 8px;">
+          <label>Contraseña:</label>
+          <div class="password-wrapper">
+            <input type="password" id="esp32-password" placeholder="Contraseña"
+                   onkeydown="if(event.key==='Enter') conectarESP32()" />
+            <button class="eye-btn" onclick="togglePassword()" type="button" title="Mostrar/ocultar">👁️</button>
+          </div>
+          <button style="margin-top:8px;" onclick="conectarESP32()">Conectar</button>
+        </div>
+
+        <input type="hidden" id="esp32-ssid" />
+        <div id="conectar-status" style="margin-top:8px;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Acerca -->
+  <div id="aboutModal" class="modal">
+    <div class="modal-content">
+      <button class="close-btn" onclick="cerrarModal()">✖</button>
+      <h3>Sobre el proyecto</h3>
+      <p>Diseñado por Adrián</p>
+    </div>
+  </div>
+
+  <!-- Input file oculto para fallback de importación desde navegador -->
+  <input type="file" id="file" style="display:none" accept=".json,application/json" onchange="importarTabla(event)" />
+
+</body>
+</html>

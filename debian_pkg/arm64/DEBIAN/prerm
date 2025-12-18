@@ -1,0 +1,8 @@
+#!/bin/bash
+set -e
+
+# Detener procesos de la aplicación
+pkill -f "python.*main.py" 2>/dev/null || true
+pkill -f "node.*server.js" 2>/dev/null || true
+
+exit 0

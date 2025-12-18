@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test PyWebView</title>
+</head>
+<body>
+    <h1>Test PyWebView</h1>
+    <button id="testBtn">Click para probar scan_wifi()</button>
+    <div id="result"></div>
+
+    <script>
+        window.addEventListener('load', () => {
+            console.log("=== PYWEBVIEW TEST ===");
+            console.log("window.pywebview disponible:", !!window.pywebview);
+            console.log("window.pywebview.api disponible:", !!window.pywebview?.api);
+            console.log("window.pywebview.api.scan_wifi disponible:", !!window.pywebview?.api?.scan_wifi);
+            
+            if (window.pywebview?.api?.scan_wifi) {
+                console.log("✓ API disponible!");
+            } else {
+                console.error("✗ API NO disponible");
+                console.log("window.pywebview:", window.pywebview);
+                console.log("window.pywebview.api:", window.pywebview?.api);
+            }
+        });
+
+        document.getElementById('testBtn').addEventListener('click', async () => {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = '<p>Llamando scan_wifi()...</p>';
+            
+            try {
+                if (!window.pywebview?.api?.scan_wifi) {
+                    throw new Error("API no disponible!");
+                }
+                
+                console.log("Llamando window.pywebview.api.scan_wifi()...");
+                const result = await window.pywebview.api.scan_wifi();
+                console.log("Resultado:", result);
+                console.log("Tipo:", typeof result);
+                
+                let data;
+                if (typeof result === 'string') {
+                    data = JSON.parse(result);
+                } else {
+                    data = result;
+                }
+                
+                const networks = data.networks || [];
+                const html = `
+                    <p>✓ Éxito! Se encontraron ${networks.length} redes:</p>
+                    <ul>
+                        ${networks.map(n => `<li>${n.ssid} (signal: ${n.signal})</li>`).join('')}
+                    </ul>
+                `;
+                resultDiv.innerHTML = html;
+            } catch (e) {
+                console.error("Error:", e);
+                console.error("Stack:", e.stack);
+                resultDiv.innerHTML = `<p style="color:red;">✗ Error: ${e.message}</p><pre>${e.stack}</pre>`;
+            }
+        });
+    </script>
+</body>
+</html>

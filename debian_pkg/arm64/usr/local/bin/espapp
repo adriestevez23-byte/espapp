@@ -1,0 +1,98 @@
+#!/bin/bash
+set -e
+
+# ============================================================================
+# Lanzador ESPAPP - Se ejecuta al instalar el paquete
+# Detecta/crea entorno virtual y lanza la aplicación
+# ============================================================================
+
+APP_DIR="/opt/espapp"
+VENV_DIR="/opt/espapp/.venv"
+PYTHON_VENV="$VENV_DIR/bin/python3"
+PIP_VENV="$VENV_DIR/bin/pip"
+
+if [ ! -f "$APP_DIR/main.py" ]; then
+    echo "❌ Error: main.py no encontrado en $APP_DIR"
+    exit 1
+fi
+
+# Si el venv no existe, crearlo (primera ejecución)
+if [ ! -d "$VENV_DIR" ]; then
+    echo "📦 Primera ejecución: creando entorno virtual..."
+    
+    # SIEMPRE instalar herramientas de compilación (necesarias para webview y otras librerías)
+    echo "🔧 Instalando herramientas de compilación y dependencias..."
+    sudo apt-get update -qq 2>/dev/null || true
+    sudo apt-get install -y --no-install-recommends \
+        python3-dev build-essential pkg-config \
+        libgtk-3-dev libgtk-3-0 libcairo2-dev libcairo2 \
+        python3-gi python3-gi-cairo gir1.2-gtk-3.0 \
+        libwebkit2gtk-4.1-0 libwebkit2gtk-4.1-dev gir1.2-webkit2-4.1 \
+        2>&1 | tail -5 || true
+    
+    # Crear venv con system-site-packages para acceder a python3-gi
+    echo "🔧 Creando venv con --system-site-packages..."
+    python3 -m venv --system-site-packages "$VENV_DIR"
+    
+    # Actualizar pip/setuptools/wheel en el venv
+    echo "⬆️  Actualizando pip, setuptools, wheel..."
+    "$PIP_VENV" install --upgrade pip setuptools wheel 2>&1 | tail -2 || true
+    
+    # Instalar requirements con preferencia por binarios precompilados
+    if [ -f "$APP_DIR/requirements.txt" ]; then
+        echo "📚 Instalando dependencias Python..."
+        # Usar rutas estándar de pkg-config
+        export PKG_CONFIG_PATH="/usr/lib/pkgconfig:/usr/share/pkgconfig:${PKG_CONFIG_PATH:-}"
+        "$PIP_VENV" install --prefer-binary -r "$APP_DIR/requirements.txt" 2>&1 | tail -5 || {
+            echo "⚠️  Problema en instalación, intentando solo con pywebview y bottle..."
+            "$PIP_VENV" install --only-binary :all: pywebview bottle 2>&1 | tail -3 || {
+                echo "⚠️  Binarios no disponibles, intentando compilar..."
+                "$PIP_VENV" install --no-binary pywebview,bottle pywebview bottle 2>&1 | tail -3 || true
+            }
+        }
+        
+        # Verificar que bottle está instalado (crítico para modo web)
+        if ! "$PYTHON_VENV" -c "import bottle" 2>/dev/null; then
+            echo "⚠️  bottle no encontrado, intentando instalar..."
+            "$PIP_VENV" install --prefer-binary bottle 2>&1 | tail -3 || true
+        fi
+    fi
+    echo "✅ Entorno virtual creado exitosamente"
+fi
+
+# Verificar que el venv está en buen estado
+if [ ! -f "$PYTHON_VENV" ]; then
+    echo "❌ Error: python3 no encontrado en venv"
+    exit 1
+fi
+
+# Verificar que webview está instalado, si no lo está, instalarlo
+if ! "$PYTHON_VENV" -c "import webview" 2>/dev/null; then
+    echo "⚠️  pywebview no encontrado, instalando..."
+    export PKG_CONFIG_PATH="/usr/lib/pkgconfig:/usr/share/pkgconfig:${PKG_CONFIG_PATH:-}"
+    
+    # Intentar solo binarios primero
+    "$PIP_VENV" install --only-binary :all: --force-reinstall pywebview 2>&1 | tail -3 || {
+        # Si falla, intentar compilar
+        "$PIP_VENV" install --no-binary pywebview --force-reinstall pywebview 2>&1 | tail -5 || {
+            echo "❌ Error: No se pudo instalar pywebview"
+            exit 1
+        }
+    }
+fi
+
+# Verificar que pywebview puede usar GTK (opcional, no bloquea)
+if ! "$PYTHON_VENV" -c "import gi; gi.require_version('Gtk', '3.0'); from gi.repository import Gtk" 2>/dev/null; then
+    echo "⚠️  GTK/pywebview no totalmente disponible"
+    echo "    Intenta: sudo apt install python3-gi python3-gi-cairo libgtk-3-dev libwebkit2gtk-4.1-dev"
+fi
+
+# Verificar que bottle está instalado (crítico para servidor web)
+if ! "$PYTHON_VENV" -c "import bottle" 2>/dev/null; then
+    echo "⚠️  bottle no encontrado, intentando instalar..."
+    "$PIP_VENV" install --prefer-binary bottle 2>&1 | tail -3 || true
+fi
+
+# Ejecutar aplicación con el python del venv
+cd "$APP_DIR"
+exec "$PYTHON_VENV" "$MAIN_PY" "$@"

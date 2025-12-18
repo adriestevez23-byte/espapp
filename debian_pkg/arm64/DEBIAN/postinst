@@ -1,0 +1,22 @@
+#!/bin/bash
+set -e
+
+APP_DIR="/opt/espapp-env"
+
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "  ✅ ESP32 Medidor - Post-instalación"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+# Hacer ejecutables los scripts
+chmod +x "$APP_DIR/run-hybrid.sh" 2>/dev/null || true
+
+echo "✅ Verificación completada"
+echo ""
+echo "🚀 Para ejecutar la aplicación:"
+echo "   espapp"
+echo ""
+echo "ℹ️  En la primera ejecución se creará el entorno virtual Python."
+echo "    (Esto puede tardar 30-60 segundos)"
+echo ""
+
+exit 0

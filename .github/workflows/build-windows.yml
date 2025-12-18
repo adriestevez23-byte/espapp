@@ -1,0 +1,121 @@
+name: Generar .exe para Windows
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:  # Permitir ejecución manual
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    
+    strategy:
+      matrix:
+        python-version: ['3.12']
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Configurar Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+        cache: 'pip'
+    
+    - name: Instalar dependencias
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install pyinstaller
+    
+    - name: Generar ejecutable Windows
+      run: |
+        python scripts/build_windows.py
+    
+    - name: Crear artefactos
+      uses: actions/upload-artifact@v3
+      with:
+        name: espapp-windows
+        path: |
+          dist/espapp/espapp.exe
+          windows_installer/
+        retention-days: 30
+    
+    - name: Crear Release (si es tag)
+      if: startsWith(github.ref, 'refs/tags/')
+      uses: softprops/action-gh-release@v1
+      with:
+        files: |
+          dist/espapp/espapp.exe
+          windows_installer/espapp_installer.nsi
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  build-linux:
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        python-version: ['3.12']
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Configurar Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+        cache: 'pip'
+    
+    - name: Instalar dependencias
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+    
+    - name: Generar paquetes Debian
+      run: |
+        echo "s" | bash scripts/build_deb.sh all
+    
+    - name: Crear artefactos
+      uses: actions/upload-artifact@v3
+      with:
+        name: espapp-linux
+        path: |
+          paquetes/
+          dist/espapp
+        retention-days: 30
+
+  build-macos:
+    runs-on: macos-latest
+    
+    strategy:
+      matrix:
+        python-version: ['3.12']
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Configurar Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+        cache: 'pip'
+    
+    - name: Instalar dependencias
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install pyinstaller
+    
+    - name: Generar ejecutable macOS
+      run: |
+        python scripts/build_windows.py
+    
+    - name: Crear artefactos
+      uses: actions/upload-artifact@v3
+      with:
+        name: espapp-macos
+        path: dist/espapp/espapp
+        retention-days: 30

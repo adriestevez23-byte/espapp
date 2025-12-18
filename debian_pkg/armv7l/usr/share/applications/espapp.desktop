@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=ESPAPP
+Comment=ESPAPP - Gestor de Sensores ESP32
+Exec=/usr/local/bin/espapp
+Icon=utilities-system-monitor
+Terminal=false
+Categories=Utility;Education;
+StartupNotify=true

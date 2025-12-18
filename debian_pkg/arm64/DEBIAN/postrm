@@ -1,0 +1,14 @@
+#!/bin/bash
+set -e
+
+case "$1" in
+  purge)
+    # Eliminar también el venv si existe
+    rm -rf /opt/espapp 2>/dev/null || true
+    ;;
+  remove)
+    # No eliminar en remove, solo en purge
+    ;;
+esac
+
+exit 0

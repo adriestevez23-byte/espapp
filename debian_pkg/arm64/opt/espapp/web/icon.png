@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+  <!-- Fondo redondeado oscuro -->
+  <rect width="256" height="256" rx="40" fill="#121212"/>
+  
+  <!-- Borde azul -->
+  <rect width="256" height="256" rx="40" fill="none" stroke="#00baff" stroke-width="8"/>
+  
+  <!-- Microchip ESP32 -->
+  <g transform="translate(128, 128)">
+    <!-- Cuerpo del chip -->
+    <rect x="-50" y="-50" width="100" height="100" rx="8" fill="#1e1e1e" stroke="#00baff" stroke-width="3"/>
+    
+    <!-- Contactos izquierda -->
+    <rect x="-65" y="-35" width="15" height="12" fill="#00baff"/>
+    <rect x="-65" y="-15" width="15" height="12" fill="#00baff"/>
+    <rect x="-65" y="5" width="15" height="12" fill="#00baff"/>
+    <rect x="-65" y="25" width="15" height="12" fill="#00baff"/>
+    
+    <!-- Contactos derecha -->
+    <rect x="50" y="-35" width="15" height="12" fill="#00baff"/>
+    <rect x="50" y="-15" width="15" height="12" fill="#00baff"/>
+    <rect x="50" y="5" width="15" height="12" fill="#00baff"/>
+    <rect x="50" y="25" width="15" height="12" fill="#00baff"/>
+    
+    <!-- Líneas internas -->
+    <line x1="-35" y1="-45" x2="-35" y2="45" stroke="#00baff" stroke-width="2" opacity="0.5"/>
+    <line x1="0" y1="-45" x2="0" y2="45" stroke="#00baff" stroke-width="2" opacity="0.5"/>
+    <line x1="35" y1="-45" x2="35" y2="45" stroke="#00baff" stroke-width="2" opacity="0.5"/>
+    
+    <!-- Indicador de velocidad (ondas) -->
+    <circle cx="0" cy="0" r="15" fill="none" stroke="#00baff" stroke-width="2" opacity="0.7"/>
+    <circle cx="0" cy="0" r="25" fill="none" stroke="#00baff" stroke-width="1.5" opacity="0.4"/>
+  </g>
+</svg>
