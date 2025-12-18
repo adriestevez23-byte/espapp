@@ -28,6 +28,8 @@ venv/
 ENV/
 env/
 .venv
+env.bak/
+venv.bak/
 
 # IDE
 .vscode/
@@ -43,37 +45,40 @@ logs/
 pywebview.log
 build_deb.log
 build.log
-build_deb_OLD.sh
-
-# Windows specific
-Thumbs.db
-*.exe.manifest
-
-# Temporary files
 *.tmp
 *.temp
 *.cache
 *.bak
 
-# App data (local)
+# App data
 *.db
 *.sqlite
 *.sqlite3
+.cache/
+.pytest_cache/
 
-# Node (si hay)
-node_modules/
-npm-debug.log
-
-# Debian package
+# Debian build
 *.deb
 *.dsc
 *.changes
-
-# Build directories
-windows_installer/
 debian_pkg/build/
 
-# Don't ignore:
+# Windows build
+Thumbs.db
+*.exe.manifest
+windows_installer/
+
+# Build directories
+build_deb_OLD.sh
+paquetes/
+
+# Documentation not needed in repo
+docs/
+docs_project/
+*.txt
+
+# Don't ignore these:
 !.gitkeep
-!build_windows.py
-!build_deb.sh
+!scripts/
+!web/
+!.github/

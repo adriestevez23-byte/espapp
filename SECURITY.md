@@ -4,7 +4,7 @@
 
 Este proyecto es **PROPIEDAD EXCLUSIVA** de Adrian Estevez.
 
-### Licencia: PROPIETARIA
+### Licencia: PROPIETARIA Y CONFIDENCIAL
 
 Todos los derechos están reservados. No se permite:
 
@@ -14,14 +14,11 @@ Todos los derechos están reservados. No se permite:
 ✗ Usar comercialmente sin autorización
 ✗ Hacer reverse engineering
 ✗ Publicar en repositorios públicos
-✗ Usar en plataformas de distribución
 
 ### Qué SÍ se permite
 
-✓ Usar para propósito personal
-✓ Uso interno en empresa (con autorización)
-✓ Desarrollo y pruebas en máquina local
-✓ Contactar para licencias comerciales
+✓ Usar la aplicación compilada
+✓ Uso personal o interno
 
 ---
 
@@ -33,17 +30,6 @@ Para solicitudes de:
 - Uso comercial
 - Distribución
 - Licencias corporativas
-- Modificaciones permitidas
-
----
-
-## 🛡️ Protecciones Implementadas
-
-- Licencia propietaria en cada descarga
-- .gitignore para evitar fugas de datos
-- GitHub Actions sin exposición de secretos
-- README sin información sensible
-- Control de acceso mediante GitHub
 
 ---
 
@@ -58,17 +44,5 @@ El autor no se responsabiliza por:
 - Cualquier otro daño directo o indirecto
 
 ---
-
-## 🔐 Datos Sensibles
-
-Este repositorio NO contiene:
-- Credenciales de acceso
-- Tokens API
-- Contraseñas
-- Información personal
-
----
-
-Última actualización: 18 de diciembre de 2025
 
 Copyright © 2025 Adrian Estevez. Todos los derechos reservados.
