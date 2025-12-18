@@ -10,6 +10,8 @@
 !requirements.txt
 !scripts/
 !web/
+!docs/
+!docs/**
 
 # Permitir archivos en .github
 .github/**
@@ -45,6 +47,7 @@ env/
 debian_pkg/
 paquetes/
 windows_installer/
+docs-dev/
 
 # Excluir logs
 *.log
