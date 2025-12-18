@@ -32,7 +32,7 @@ jobs:
     
     - name: Generar ejecutable Windows
       run: |
-        python scripts/build_windows.py
+        python scripts/build_wrapper.py
       continue-on-error: true
     
     - name: Crear artefactos Windows
@@ -115,7 +115,7 @@ jobs:
     
     - name: Generar ejecutable macOS
       run: |
-        python scripts/build_windows.py
+        python scripts/build_wrapper.py
       continue-on-error: true
     
     - name: Crear artefactos macOS

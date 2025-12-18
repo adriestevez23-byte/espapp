@@ -128,7 +128,17 @@ Los ejecutables están disponibles en la pestaña **Actions** → **Artifacts**
 
 ## 📝 Licencia
 
-MIT License - Ver [LICENSE](LICENSE) para detalles
+**Licencia Propietaria** - Este software es propiedad exclusiva de Adrian Estevez.
+
+⚠️ **Restricciones:**
+- ❌ NO se puede copiar, reproducir ni modificar
+- ❌ NO se puede distribuir o compartir
+- ❌ NO se puede usar con fines comerciales sin autorización
+- ❌ NO se permite reverse engineering
+
+Para uso comercial o licencias especiales, contacta: **adriestevez23@gmail.com**
+
+Ver [LICENSE](LICENSE) para detalles completos.
 
 ---
 
