@@ -61,7 +61,7 @@ build.log
 *.deb
 *.dsc
 *.changes
-debian_pkg/build/
+debian_pkg/
 
 # Windows build
 Thumbs.db
@@ -72,13 +72,31 @@ windows_installer/
 build_deb_OLD.sh
 paquetes/
 
-# Documentation not needed in repo
+# Documentation internal
 docs/
 docs_project/
-*.txt
 
-# Don't ignore these:
-!.gitkeep
+# Configuration files not needed
+pyvenv.cfg
+.python-version
+
+# Local data files (unless needed)
+data.json
+secciones.json
+
+# Desktop files
+*.desktop
+
+# Spec files
+*.spec
+
+# Misc
+README_GITHUB_ACTIONS.md
+DESCARGAR_EXE.sh
+start_debug.py
+run_with_logs.py
+
+# Keep essentials
 !scripts/
 !web/
 !.github/
