@@ -1,50 +1,140 @@
-# 📌 ESP32 App v1.0.0
+# ESPAPP - ESP32 Sensor Manager
 
-**Gestor de sensores para ESP32 - Aplicación multiplataforma**
+**Aplicación web multiplataforma para gestionar sensores conectados a ESP32**
 
 ---
 
-## 🚀 Iniciar en 10 segundos
+## 🚀 Quick Start
+
+### Windows / macOS / Linux
 
 ```bash
-./start
+# Clonar repositorio
+git clone https://github.com/adriestevez23-byte/espapp.git
+cd espapp
+
+# Instalar dependencias
+pip install -r requirements.txt
+
+# Ejecutar aplicación
+python main.py
 ```
 
-Luego abre: **http://localhost:8000**
+Luego abre en tu navegador: **http://localhost:8000**
 
 ---
 
-## 📁 Estructura de archivos
+## 📦 Características
+
+✅ Interfaz web responsiva con JavaScript puro
+✅ Backend Python con Bottle framework
+✅ Conexión WiFi a dispositivos ESP32
+✅ Gestión de sensores en tiempo real
+✅ Gráficos y visualización de datos
+✅ Multiplataforma (Windows, Linux, macOS)
+✅ Ejecutables compilados disponibles
+
+---
+
+## 📥 Descargas
+
+### Ejecutables compilados
+
+- **Windows (.exe)** → [Descargar desde Releases](https://github.com/adriestevez23-byte/espapp/releases)
+- **Linux (.deb)** → [Descargar desde Releases](https://github.com/adriestevez23-byte/espapp/releases)
+- **macOS (.app)** → [Descargar desde Releases](https://github.com/adriestevez23-byte/espapp/releases)
+
+---
+
+## 🛠️ Tecnologías
+
+- **Python 3.12** - Backend
+- **Bottle** - Framework web
+- **PyWebView** - Interfaz nativa
+- **JavaScript** - Frontend
+- **PyInstaller** - Compilación de ejecutables
+
+---
+
+## 📁 Estructura
 
 ```
-espapp-env/
-├── 📌 INFO.txt                  👈 Lee esto primero
-├── 📌 QUICKSTART.md             👈 Guía rápida
-├── 🚀 start                     👈 Ejecutable principal
-│
-├── main.py                      Backend principal
-├── config.py                    Configuración
-├── build_windows.py             Constructor Windows
-├── requirements.txt             Dependencias Python
-│
-├── web/                         Interfaz web
-│   ├── index.html
-│   ├── style.css
-│   └── js/                      JavaScript modules
-│
-├── scripts/                     Scripts de compilación
-│   └── build_deb.sh            Constructor Linux
-│
-├── docs_project/               Toda la documentación
-│   ├── README.md               Este archivo
-│   ├── README_COMPLETO.md      Guía completa
-│   ├── QUICKSTART.md           Guía rápida
-│   ├── CAMBIOS_18_DICIEMBRE.md Resumen cambios
-│   └── DISTRIBUCION.md         Distribución
-│
-└── docs/                       Documentación técnica (no tocar)
-    └── ...
+espapp/
+├── main.py              Punto de entrada principal
+├── requirements.txt     Dependencias Python
+├── web/                 Interfaz web (HTML/CSS/JS)
+├── scripts/             Scripts de compilación
+│   ├── build_windows.py Compilador Windows
+│   └── build_deb.sh     Compilador Linux
+└── .github/workflows/   GitHub Actions (compilación automática)
 ```
+
+---
+
+## 🔧 Desarrollo
+
+### Requisitos
+
+- Python 3.12+
+- pip (gestor de paquetes)
+
+### Instalación local
+
+```bash
+# Crear entorno virtual
+python -m venv venv
+source venv/bin/activate  # En Windows: venv\Scripts\activate
+
+# Instalar dependencias
+pip install -r requirements.txt
+
+# Ejecutar en modo desarrollo
+python main.py
+```
+
+---
+
+## 🏗️ Compilación
+
+### Generar ejecutable Windows
+
+```bash
+python scripts/build_windows.py
+```
+
+**Output:** `dist/espapp/espapp.exe`
+
+### Generar paquetes Linux (.deb)
+
+```bash
+bash scripts/build_deb.sh all
+```
+
+**Output:** Paquetes en `paquetes/`
+
+---
+
+## ⚙️ GitHub Actions
+
+La compilación se realiza automáticamente:
+
+1. **Push a main** → Compila automáticamente
+2. **Tags** → Crea releases con artefactos
+3. **Pull requests** → Valida compilación
+
+Los ejecutables están disponibles en la pestaña **Actions** → **Artifacts**
+
+---
+
+## 📝 Licencia
+
+MIT License - Ver [LICENSE](LICENSE) para detalles
+
+---
+
+## 👤 Autor
+
+**Adrian Estevez**
 
 ---
 
