@@ -91,38 +91,4 @@ jobs:
         retention-days: 30
         if-no-files-found: warn
 
-  build-macos:
-    runs-on: macos-latest
-    
-    strategy:
-      matrix:
-        python-version: ['3.12']
-    
-    steps:
-    - uses: actions/checkout@v4
-    
-    - name: Configurar Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v4
-      with:
-        python-version: ${{ matrix.python-version }}
-        cache: 'pip'
-    
-    - name: Instalar dependencias
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
-        pip install pyinstaller
-    
-    - name: Generar ejecutable macOS
-      run: |
-        python scripts/build_wrapper.py
-      continue-on-error: true
-    
-    - name: Crear artefactos macOS
-      if: always()
-      uses: actions/upload-artifact@v3
-      with:
-        name: espapp-macos
-        path: dist/espapp/
-        retention-days: 30
-        if-no-files-found: warn
+

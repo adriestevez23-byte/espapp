@@ -1,6 +1,6 @@
 # Mostrar solo lo esencial - todo lo demás ignorado
 *
-!.github
+!.github/
 !.gitignore
 !CHANGELOG.md
 !LICENSE
@@ -11,8 +11,17 @@
 !scripts/
 !web/
 
-# Permitir carpetas
-!*/
+# Permitir archivos en .github
+.github/**
+!.github/workflows/
+!.github/workflows/**
+
+# Excluir virtual env completamente
+bin/
+include/
+lib/
+lib64/
+pyvenv.cfg
 
 # Excluir Python cache
 __pycache__/
@@ -25,15 +34,8 @@ __pycache__/
 *.egg-info/
 dist/
 build/
-
-# Excluir virtual env
 venv/
 env/
-bin/
-include/
-lib/
-lib64/
-pyvenv.cfg
 
 # Excluir IDE
 .vscode/
@@ -51,5 +53,7 @@ windows_installer/
 *.json
 *.db
 *.sqlite
+*.desktop
+*.spec
 *.desktop
 *.spec
