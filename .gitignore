@@ -1,35 +1,43 @@
+# Only keep essential files
+
+# Ignore everything by default
+/*
+!.github/
+!scripts/
+!web/
+!.gitignore
+!CHANGELOG.md
+!LICENSE
+!SECURITY.md
+!README.md
+!requirements.txt
+!main.py
+
+# Allow directories
+!*/
+
 # Python
 __pycache__/
 *.py[cod]
 *$py.class
 *.so
+*.egg-info/
 .Python
 build/
-develop-eggs/
 dist/
-downloads/
 eggs/
-.eggs/
 lib/
 lib64/
 parts/
 sdist/
 var/
 wheels/
-pip-wheel-metadata/
-share/python-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
-MANIFEST
 
 # Virtual environments
 venv/
 ENV/
 env/
 .venv
-env.bak/
-venv.bak/
 
 # IDE
 .vscode/
@@ -37,66 +45,28 @@ venv.bak/
 *.swp
 *.swo
 *~
-.DS_Store
 
-# App specific
+# Logs and temp
 *.log
-logs/
-pywebview.log
-build_deb.log
-build.log
 *.tmp
-*.temp
 *.cache
-*.bak
+.cache/
 
-# App data
+# OS
+.DS_Store
+Thumbs.db
+
+# Data
 *.db
 *.sqlite
 *.sqlite3
-.cache/
-.pytest_cache/
-
-# Debian build
-*.deb
-*.dsc
-*.changes
-debian_pkg/
-
-# Windows build
-Thumbs.db
-*.exe.manifest
-windows_installer/
-
-# Build directories
-build_deb_OLD.sh
-paquetes/
-
-# Documentation internal
-docs/
-docs_project/
-
-# Configuration files not needed
-pyvenv.cfg
-.python-version
-
-# Local data files (unless needed)
-data.json
-secciones.json
-
-# Desktop files
+*.json
 *.desktop
-
-# Spec files
 *.spec
+pyvenv.cfg
 
-# Misc
-README_GITHUB_ACTIONS.md
-DESCARGAR_EXE.sh
-start_debug.py
-run_with_logs.py
-
-# Keep essentials
-!scripts/
-!web/
-!.github/
+# Build
+paquetes/
+*.deb
+*.exe
+windows_installer/
