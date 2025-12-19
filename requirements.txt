@@ -6,6 +6,8 @@ netifaces==0.11.0
 packaging==25.0
 pillow==12.0.0
 PyQt5==5.15.10
+PyQtWebEngine==5.15.6
+qtpy==2.4.1
 proxy_tools==0.1.0
 pywebview>=4.0,<7.0
 reportlab==4.4.5

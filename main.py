@@ -8,7 +8,26 @@ import requests
 import ipaddress
 import os
 import sys
-from PyQt5 import QtCore, QtWebEngineWidgets  # Import obligatorio antes de QApplication
+# Intentar importar PyQt5 con fallback
+QtCore = None
+QtWebEngineWidgets = None
+try:
+    from PyQt5 import QtCore
+    print("[DEBUG] PyQt5.QtCore importado correctamente")
+    try:
+        from PyQt5 import QtWebEngineWidgets
+        print("[DEBUG] PyQt5.QtWebEngineWidgets importado correctamente")
+    except Exception as e:
+        print(f"[DEBUG] PyQt5.QtWebEngineWidgets no disponible: {e}")
+        try:
+            import PyQt5.QtWebEngineWidgets as QtWebEngineWidgets
+            print("[DEBUG] PyQt5.QtWebEngineWidgets importado vía path alternativo")
+        except Exception as e2:
+            print(f"[DEBUG] PyQt5.QtWebEngineWidgets no disponible (alternativo): {e2}")
+            QtWebEngineWidgets = None
+except Exception as e:
+    print(f"[DEBUG] PyQt5.QtCore no disponible: {e}. Continuando sin soporte QT.")
+    QtCore = None
 try:
     from reportlab.lib.pagesizes import letter
     from reportlab.platypus import SimpleDocTemplate, Table, TableStyle
@@ -100,6 +119,25 @@ class API:
         """Cierra la ventana"""
         if self.window:
             self.window.destroy()
+
+    # ------------------------------------------------
+    def log_js(self, level, message):
+        """Recibe mensajes de consola desde la página web y los registra en un fichero."""
+        try:
+            base = os.path.dirname(os.path.abspath(__file__))
+            logdir = os.path.join(base, "logs")
+            os.makedirs(logdir, exist_ok=True)
+            logfile = os.path.join(logdir, "web_console.log")
+            ts = time.strftime('%Y-%m-%d %H:%M:%S')
+            # Normalizar mensaje a string
+            msg = str(message)
+            with open(logfile, "a", encoding="utf-8") as f:
+                f.write(f"[{ts}] {level.upper()}: {msg}\n")
+            print(f"[WEBJS {level}] {msg}")
+            return True
+        except Exception as e:
+            print("[ERROR] log_js:", e)
+            return False
 
     # ------------------------------------------------
     def scan_wifi(self):
@@ -518,8 +556,15 @@ def start():
         print(f"[WARN] Icono no encontrado en {ICON_PATH}, se usará genérico")
         ICON_PATH = None
 
-    # ⚡ Importante para QtWebEngine en Linux
-    QtCore.QCoreApplication.setAttribute(QtCore.Qt.AA_ShareOpenGLContexts)
+    # ⚡ Importante para QtWebEngine en Linux (solo si QtCore está disponible)
+    if QtCore is not None:
+        try:
+            QtCore.QCoreApplication.setAttribute(QtCore.Qt.AA_ShareOpenGLContexts)
+            print("[DEBUG] QtCore.QCoreApplication.setAttribute configurado")
+        except Exception as e:
+            print(f"[DEBUG] No se pudo configurar QtCore.QCoreApplication: {e}")
+    else:
+        print("[DEBUG] QtCore no disponible, saltando configuración Qt")
 
     api = API()
 
@@ -533,7 +578,34 @@ def start():
     )
     api.set_window(window)
 
-    webview.start(debug=False, gui='qt', icon=ICON_PATH)
+    # Inyectar capturador de consola JS para enviar logs a Python (ayuda a depurar errores UI)
+    def inject_console_logger(win):
+        try:
+            js = r"""
+(function(){
+  function send(level,msg){
+    try{ window.pywebview.api.log_js(level, String(msg)); }catch(e){}
+  }
+  ['log','info','warn','error','debug'].forEach(function(level){
+    var orig = console[level];
+    console[level] = function(){
+      try{ send(level, Array.prototype.slice.call(arguments).join(' ')); }catch(e){}
+      if(orig && orig.apply) orig.apply(console, arguments);
+    };
+  });
+  window.addEventListener('error', function(e){
+    try{ send('error', e.message + ' at ' + e.filename + ':' + e.lineno + ':' + e.colno); }catch(e){}
+  });
+  window.addEventListener('unhandledrejection', function(e){
+    try{ send('error', 'UnhandledRejection: ' + (e.reason && e.reason.stack? e.reason.stack : e.reason)); }catch(e){}
+  });
+})();
+"""
+            win.evaluate_js(js)
+        except Exception as e:
+            print("[ERROR] inject_console_logger:", e)
+
+    webview.start(func=inject_console_logger, args=(window,), debug=False, gui='qt', icon=ICON_PATH)
 
 if __name__ == "__main__":
     start()

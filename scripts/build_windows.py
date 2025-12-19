@@ -96,6 +96,22 @@ def build_executable():
     """Construye el ejecutable con PyInstaller"""
     log_step(1, 4, "Construyendo ejecutable...")
     
+    # Verificar sintaxis de main.py
+    print(f"{Colors.YELLOW}  - Verificando sintaxis de main.py...{Colors.NC}")
+    result = subprocess.run(
+        [sys.executable, "-m", "py_compile", "main.py"],
+        capture_output=True, text=True
+    )
+    if result.returncode != 0:
+        log_error("Error de sintaxis en main.py:")
+        print(result.stderr)
+        return False
+    print(f"{Colors.GREEN}  ✓ main.py válido{Colors.NC}")
+    
+    # Asegurar directorio logs
+    os.makedirs("logs", exist_ok=True)
+    print(f"{Colors.GREEN}  ✓ Directorio logs creado{Colors.NC}")
+    
     # Limpiar builds anteriores con visualización
     if os.path.exists(BUILD_DIR):
         print(f"{Colors.YELLOW}Limpiando compilación anterior...{Colors.NC}")
@@ -121,6 +137,7 @@ def build_executable():
         "--add-data=web:web",
         "--add-data=secciones.json:.",
         "--add-data=data.json:.",
+        "--add-data=logs:logs",
         f"--icon={ICON_FILE}",
         f"--distpath={DIST_DIR}",
         f"--workpath={BUILD_DIR}",
@@ -278,7 +295,8 @@ def create_batch_launcher():
     os.makedirs(OUTPUT_DIR, exist_ok=True)
     
     batch_content = f"""@echo off
-REM Ejecutor para ESP32 App
+REM Ejecutor para ESPAPP - Gestor de Sensores ESP32
+REM Inicia la aplicación sin ventana de terminal
 setlocal enabledelayedexpansion
 
 cd /d "%~dp0"
@@ -296,7 +314,8 @@ def main():
     """Función principal"""
     # Banner
     print(f"\n{Colors.BLUE}{'='*60}{Colors.NC}")
-    print(f"{Colors.CYAN}🚀 Constructor de {APP_NAME} v{APP_VERSION}{Colors.NC}")
+    print(f"{Colors.CYAN}🚀 Constructor de {APP_NAME} - Gestor de Sensores ESP32{Colors.NC}")
+    print(f"{Colors.CYAN}v{APP_VERSION}{Colors.NC}")
     print(f"{Colors.BLUE}{'='*60}{Colors.NC}\n")
     
     start_time = time.time()

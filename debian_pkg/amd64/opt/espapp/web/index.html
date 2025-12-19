@@ -6,6 +6,20 @@
 <title>ESP32 • Gestor de Sensores</title>
 <link rel="icon" type="image/svg+xml" href="icon.svg">
 <link rel="stylesheet" href="style.css" />
+<!-- Polyfill localStorage para entornos que no lo soportan (pywebview, etc) -->
+<script>
+  if (typeof localStorage === 'undefined' || localStorage === null) {
+    window.localStorage = {
+      data: {},
+      getItem(key) { return this.data[key] || null; },
+      setItem(key, value) { this.data[key] = String(value); },
+      removeItem(key) { delete this.data[key]; },
+      clear() { this.data = {}; },
+      key(index) { return Object.keys(this.data)[index] || null; },
+      get length() { return Object.keys(this.data).length; }
+    };
+  }
+</script>
 <script type="module" src="js/main.js" defer></script>
 </head>
 <body>

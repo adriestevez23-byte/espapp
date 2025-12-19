@@ -52,7 +52,13 @@ export const sectionManager = {
   // Establecer sección activa
   establecerSeccionActiva(id) {
     this.seccionActiva = this.obtenerSeccion(id);
-    localStorage.setItem('seccionActiva', id);
+    try {
+      if (localStorage && localStorage.setItem) {
+        localStorage.setItem('seccionActiva', id);
+      }
+    } catch (e) {
+      console.warn('[SECTIONS] No se pudo guardar seccionActiva en localStorage:', e);
+    }
   },
 
   // ===== GESTIÓN DE COLUMNAS =====
@@ -228,12 +234,26 @@ export const sectionManager = {
       this.secciones = [];
       console.warn('[SECTIONS] API Python no disponible para cargar secciones');
     }
-    // Cargar sección activa
-    const activa = localStorage.getItem('seccionActiva');
-    if (activa && this.obtenerSeccion(activa)) {
-      this.seccionActiva = this.obtenerSeccion(activa);
+    
+    // Cargar sección activa (con fallback si localStorage no está disponible)
+    let seccionActivaId = null;
+    try {
+      if (localStorage && localStorage.getItem) {
+        seccionActivaId = localStorage.getItem('seccionActiva');
+      }
+    } catch (e) {
+      console.warn('[SECTIONS] localStorage.getItem falló:', e);
+    }
+    
+    if (seccionActivaId && this.obtenerSeccion(seccionActivaId)) {
+      this.seccionActiva = this.obtenerSeccion(seccionActivaId);
+      console.info('[SECTIONS] Sección activa restaurada:', seccionActivaId);
     } else if (this.secciones.length > 0) {
       this.seccionActiva = this.secciones[0];
+      console.info('[SECTIONS] Primera sección establecida como activa');
+    } else {
+      this.seccionActiva = null;
+      console.warn('[SECTIONS] No hay secciones disponibles');
     }
   },
 

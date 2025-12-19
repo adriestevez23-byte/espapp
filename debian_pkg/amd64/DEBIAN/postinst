@@ -1,10 +1,10 @@
 #!/bin/bash
 set -e
 
-APP_DIR="/opt/espapp-env"
+APP_DIR="/opt/espapp"
 
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "  ✅ ESP32 Medidor - Post-instalación"
+echo "  ✅ ESPAPP - Gestor de Sensores ESP32 - Post-instalación"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
 # Hacer ejecutables los scripts
@@ -14,9 +14,24 @@ echo "✅ Verificación completada"
 echo ""
 echo "🚀 Para ejecutar la aplicación:"
 echo "   espapp"
+echo "   o busca 'ESPAPP' en tu gestor de aplicaciones"
 echo ""
 echo "ℹ️  En la primera ejecución se creará el entorno virtual Python."
 echo "    (Esto puede tardar 30-60 segundos)"
 echo ""
+
+exit 0
+#!/bin/bash
+set -e
+
+# Actualizar base de datos de aplicaciones e iconos si las utilidades existen
+if command -v update-desktop-database >/dev/null 2>&1; then
+    update-desktop-database >/dev/null 2>&1 || true
+fi
+if command -v gtk-update-icon-cache >/dev/null 2>&1; then
+    if [ -d "/usr/share/icons/hicolor" ]; then
+        gtk-update-icon-cache -f -t /usr/share/icons/hicolor >/dev/null 2>&1 || true
+    fi
+fi
 
 exit 0

@@ -123,10 +123,12 @@ echo -e "${BLUE}"
 cat << "EOF"
 ╔════════════════════════════════════════════════════════════╗
 ║                                                            ║
-║   🚀 ESP32 MEDIDOR DE VELOCIDAD - GENERADOR DE .DEB      ║
+║   🚀 ESPAPP - GESTOR DE SENSORES ESP32 - GENERADOR .DEB  ║
 ║                                                            ║
 ║   Versión: 1.0 (Optimizado para venv)                     ║
 ║   Arquitecturas: arm64, armv7l, amd64                      ║
+║   Aplicación GUI para gestionar sensores conectados       ║
+║   a dispositivos ESP32 en tiempo real                     ║
 ║                                                            ║
 ╚════════════════════════════════════════════════════════════╝
 EOF
@@ -160,7 +162,7 @@ for ARCH in "${ARCHS[@]}"; do
     
     print_info "Creando estructura de directorios..."
     mkdir -p "$PKG_WORK"/DEBIAN
-    mkdir -p "$PKG_WORK"/opt/espapp-env
+    mkdir -p "$PKG_WORK"/opt/espapp
     mkdir -p "$PKG_WORK"/usr/local/bin
     mkdir -p "$PKG_WORK"/usr/share/applications
     print_success "Directorios creados"
@@ -178,6 +180,7 @@ for ARCH in "${ARCHS[@]}"; do
     mkdir -p "$APP_DIR/web"
     mkdir -p "$APP_DIR/backend"
     mkdir -p "$APP_DIR/backend_node"
+    mkdir -p "$APP_DIR/logs"
     
     progress_bar 2 5 "Copiando código fuente"
     sleep 0.3
@@ -238,11 +241,90 @@ APP_DIR="/opt/espapp"
 VENV_DIR="/opt/espapp/.venv"
 PYTHON_VENV="$VENV_DIR/bin/python3"
 PIP_VENV="$VENV_DIR/bin/pip"
+MAIN_PY="$APP_DIR/main.py"
 
 if [ ! -f "$APP_DIR/main.py" ]; then
     echo "❌ Error: main.py no encontrado en $APP_DIR"
     exit 1
 fi
+
+# -------------------------------------------------
+# Diagnóstico rápido: comprobar dependencias visibles
+# -------------------------------------------------
+check_deps() {
+    echo "🔍 Comprobando dependencias del sistema y Python..."
+    missing_sys=()
+    missing_py=()
+
+    # Comprobar pkg-config y webkit2gtk
+    if ! command -v pkg-config >/dev/null 2>&1 || ! pkg-config --exists "webkit2gtk-4.0" 2>/dev/null; then
+        missing_sys+=("libwebkit2gtk-4.1-0 libwebkit2gtk-4.1-dev")
+    fi
+
+    # Comprobar Qt WebEngine (paquetes del sistema / binding python)
+    if ! python3 -c "import PyQt5.QtWebEngineWidgets" >/dev/null 2>&1; then
+        missing_sys+=("python3-pyqt5 python3-pyqt5.qtwebengine libqt5webengine5")
+        missing_py+=("PyQt5.QtWebEngineWidgets")
+    fi
+
+    # Comprobar gi (GTK) bindings
+    if ! python3 -c "import gi" >/dev/null 2>&1; then
+        missing_sys+=("python3-gi python3-gi-cairo gir1.2-gtk-3.0")
+        missing_py+=("gi")
+    fi
+
+    # Comprobar pywebview disponible en python3
+    if ! python3 -c "import webview" >/dev/null 2>&1; then
+        missing_py+=("webview (pywebview)")
+    fi
+    
+    # Comprobar qtpy (necesario para pywebview con Qt)
+    if ! python3 -c "import qtpy" >/dev/null 2>&1; then
+        missing_py+=("qtpy")
+    fi
+
+    # Archivos web fundamentales
+    missing_files=()
+    for f in "web/index.html" "web/js/main.js" "web/js/sectionsUI.js"; do
+        if [ ! -f "$APP_DIR/$f" ]; then
+            missing_files+=("$f")
+        fi
+    done
+
+    if [ ${#missing_sys[@]} -ne 0 ] || [ ${#missing_py[@]} -ne 0 ] || [ ${#missing_files[@]} -ne 0 ]; then
+        echo "\n[Diagnostics] Se detectaron elementos potencialmente faltantes:" 
+        
+        if [ ${#missing_sys[@]} -ne 0 ]; then
+            echo "  - Paquetes del sistema sugeridos: ${missing_sys[*]}"
+            echo "    ${YELLOW}Intentando instalar automáticamente...${NC}"
+            
+            # Intentar instalar paquetes del sistema
+            if sudo apt-get update -qq 2>/dev/null && sudo apt-get install -y -qq ${missing_sys[*]} 2>/dev/null; then
+                echo -e "    ${GREEN}✅ Paquetes instalados correctamente${NC}"
+            else
+                echo "    ${YELLOW}⚠️  No se pudieron instalar todos los paquetes automáticamente${NC}"
+                echo "    Instala manualmente:"
+                echo "      sudo apt update && sudo apt install -y ${missing_sys[*]}"
+            fi
+        fi
+        
+        if [ ${#missing_py[@]} -ne 0 ]; then
+            echo "  - Módulos Python ausentes o no detectados: ${missing_py[*]}"
+            echo "    Ejecuta en el entorno del sistema o en el venv:"
+            echo "      pip install ${missing_py[*]}"
+        fi
+        
+        if [ ${#missing_files[@]} -ne 0 ]; then
+            echo "  - Archivos web faltantes dentro de la instalación: ${missing_files[*]}"
+            echo "    Verifica que el directorio \$APP_DIR/web contenga los ficheros estáticos." 
+        fi
+        echo ""
+    else
+        echo "✅ Dependencias mínimas encontradas (comprobación rápida)."
+    fi
+}
+
+check_deps
 
 # Si el venv no existe, crearlo (primera ejecución)
 if [ ! -d "$VENV_DIR" ]; then
@@ -272,18 +354,20 @@ if [ ! -d "$VENV_DIR" ]; then
         # Usar rutas estándar de pkg-config
         export PKG_CONFIG_PATH="/usr/lib/pkgconfig:/usr/share/pkgconfig:${PKG_CONFIG_PATH:-}"
         "$PIP_VENV" install --prefer-binary -r "$APP_DIR/requirements.txt" 2>&1 | tail -5 || {
-            echo "⚠️  Problema en instalación, intentando solo con pywebview y bottle..."
-            "$PIP_VENV" install --only-binary :all: pywebview bottle 2>&1 | tail -3 || {
+            echo "⚠️  Problema en instalación, intentando instalar componentes críticos..."
+            "$PIP_VENV" install --prefer-binary PyQt5 PyQtWebEngine qtpy pywebview bottle 2>&1 | tail -5 || {
                 echo "⚠️  Binarios no disponibles, intentando compilar..."
-                "$PIP_VENV" install --no-binary pywebview,bottle pywebview bottle 2>&1 | tail -3 || true
+                "$PIP_VENV" install --no-binary :all: PyQt5 PyQtWebEngine qtpy pywebview bottle 2>&1 | tail -5 || true
             }
         }
         
-        # Verificar que bottle está instalado (crítico para modo web)
-        if ! "$PYTHON_VENV" -c "import bottle" 2>/dev/null; then
-            echo "⚠️  bottle no encontrado, intentando instalar..."
-            "$PIP_VENV" install --prefer-binary bottle 2>&1 | tail -3 || true
-        fi
+        # Verificar componentes críticos
+        for mod in "bottle" "qtpy" "PyQt5"; do
+            if ! "$PYTHON_VENV" -c "import $mod" 2>/dev/null; then
+                echo "⚠️  $mod no encontrado, reintentando instalación..."
+                "$PIP_VENV" install --prefer-binary --force-reinstall "$mod" 2>&1 | tail -2 || true
+            fi
+        done
     fi
     echo "✅ Entorno virtual creado exitosamente"
 fi
@@ -321,6 +405,18 @@ if ! "$PYTHON_VENV" -c "import bottle" 2>/dev/null; then
     "$PIP_VENV" install --prefer-binary bottle 2>&1 | tail -3 || true
 fi
 
+# Verificar que qtpy está instalado (crítico para Qt backend de pywebview)
+if ! "$PYTHON_VENV" -c "import qtpy" 2>/dev/null; then
+    echo "⚠️  qtpy no encontrado, instalando..."
+    "$PIP_VENV" install --prefer-binary qtpy 2>&1 | tail -3 || true
+fi
+
+# Verificar que PyQtWebEngine está instalado (backend de webview)
+if ! "$PYTHON_VENV" -c "from PyQt5 import QtWebEngineWidgets" 2>/dev/null; then
+    echo "⚠️  PyQt5.QtWebEngineWidgets no encontrado, intentando instalar PyQtWebEngine..."
+    "$PIP_VENV" install --prefer-binary PyQtWebEngine 2>&1 | tail -3 || true
+fi
+
 # Ejecutar aplicación con el python del venv
 cd "$APP_DIR"
 exec "$PYTHON_VENV" "$MAIN_PY" "$@"
@@ -340,14 +436,25 @@ Version=1.0
 Type=Application
 Name=ESPAPP
 Comment=ESPAPP - Gestor de Sensores ESP32
-Exec=/usr/local/bin/espapp
-Icon=utilities-system-monitor
+    Exec=/usr/local/bin/espapp
+    Icon=espapp
 Terminal=false
 Categories=Utility;Education;
 StartupNotify=true
 DESKTOP
     
     print_success "Archivo .desktop creado"
+
+    # Copiar iconos personalizados al tema de iconos hicolor
+    ICON_SRC_DIR="$APP_DIR/web"
+    if [ -f "$ICON_SRC_DIR/icon.svg" ]; then
+        mkdir -p "$PKG_WORK/usr/share/icons/hicolor/scalable/apps"
+        cp "$ICON_SRC_DIR/icon.svg" "$PKG_WORK/usr/share/icons/hicolor/scalable/apps/$APP_NAME.svg" || true
+    fi
+    if [ -f "$ICON_SRC_DIR/icon.png" ]; then
+        mkdir -p "$PKG_WORK/usr/share/icons/hicolor/256x256/apps"
+        cp "$ICON_SRC_DIR/icon.png" "$PKG_WORK/usr/share/icons/hicolor/256x256/apps/$APP_NAME.png" || true
+    fi
     
     # ═══════════════════════════════════════════════════════════
     # PASO 5: CONFIGURAR PAQUETE DEBIAN
@@ -368,11 +475,19 @@ Recommends: python3-dev, build-essential, pkg-config, libgtk-3-dev, libgtk-3-0, 
 Homepage: https://github.com/espapp/espapp
 License: MIT
 Description: ESPAPP - Gestor de Sensores ESP32
- Aplicación para gestionar dispositivos ESP32.
- Compatible con Raspberry Pi y sistemas Linux.
+ Aplicación GUI para gestionar y monitorizar sensores
+ conectados a dispositivos ESP32 en tiempo real.
  .
+ Características:
+  - Escaneo y conexión a redes WiFi del ESP32
+  - Monitorización en tiempo real de datos de sensores
+  - Gestión de secciones y tablas de datos personalizables
+  - Exportación de datos a PDF, JSON y otros formatos
+  - Interfaz gráfica intuitiva y responsive
+ .
+ Compatible con Raspberry Pi, PC y sistemas Linux.
  Requiere: Python 3.8+
- Opcional: Node.js 14+ (para backend Node)
+ Opcional: Node.js 14+ (para backend Node adicional)
 CONTROL
     
     # Reemplazar placeholders
@@ -393,10 +508,10 @@ CONTROL
 #!/bin/bash
 set -e
 
-APP_DIR="/opt/espapp-env"
+APP_DIR="/opt/espapp"
 
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "  ✅ ESP32 Medidor - Post-instalación"
+echo "  ✅ ESPAPP - Gestor de Sensores ESP32 - Post-instalación"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
 # Hacer ejecutables los scripts
@@ -406,6 +521,7 @@ echo "✅ Verificación completada"
 echo ""
 echo "🚀 Para ejecutar la aplicación:"
 echo "   espapp"
+echo "   o busca 'ESPAPP' en tu gestor de aplicaciones"
 echo ""
 echo "ℹ️  En la primera ejecución se creará el entorno virtual Python."
 echo "    (Esto puede tardar 30-60 segundos)"
@@ -413,6 +529,24 @@ echo ""
 
 exit 0
 POSTINST
+
+    # En el postinst del paquete, actualizar cache de iconos y base de datos de escritorio
+    cat >> "$PKG_WORK/DEBIAN/postinst" << 'POSTINST_ICON'
+#!/bin/bash
+set -e
+
+# Actualizar base de datos de aplicaciones e iconos si las utilidades existen
+if command -v update-desktop-database >/dev/null 2>&1; then
+    update-desktop-database >/dev/null 2>&1 || true
+fi
+if command -v gtk-update-icon-cache >/dev/null 2>&1; then
+    if [ -d "/usr/share/icons/hicolor" ]; then
+        gtk-update-icon-cache -f -t /usr/share/icons/hicolor >/dev/null 2>&1 || true
+    fi
+fi
+
+exit 0
+POSTINST_ICON
     
     # prerm - Se ejecuta antes de desinstalar
     install -m 755 /dev/null "$PKG_WORK/DEBIAN/prerm"
