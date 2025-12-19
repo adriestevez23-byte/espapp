@@ -100,16 +100,6 @@ source bin/activate  # Linux/Mac
 
 ---
 
-## 📝 Licencia
-
-MIT License - Ver [LICENSE](LICENSE) para detalles
-
----
-
-**v1.0.0** | Actualizado: Diciembre 2025
-
----
-
 ## 📄 Documentación
 
 - [CHANGELOG.md](CHANGELOG.md) - Historial de versiones
